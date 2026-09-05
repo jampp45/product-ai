@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Продакшн — карточки товаров с помощью ИИ</title>
+<meta name="description" content="Загрузи фото товара — получи готовую карточку для маркетплейса за минуту.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14130f; --panel: #1c1b16; --panel-2: #24221b; --line: #35331f;
+    --ink: #ece7d9; --ink-dim: #a39d87; --accent: #d4a72c; --accent-dim: #7a6420;
+    --rust: #c25b4a; --radius: 10px;
+  }
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; line-height:1.5; }
+  h1,h2,.serif{ font-family:"Newsreader",Georgia,serif; }
+  a{ color: inherit; }
+  .wrap{ max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+  .hidden{ display: none !important; }
+
+  nav.top{ border-bottom: 1px solid var(--line); position: sticky; top:0; background: rgba(20,19,15,0.92); backdrop-filter: blur(6px); z-index: 10; }
+  nav.top .wrap{ display:flex; align-items:center; justify-content:space-between; padding: 14px 20px; }
+  .brand{ font-family:"Newsreader",serif; font-size: 20px; font-weight: 600; }
+  .brand span{ color: var(--accent); }
+  .nav-right{ display:flex; align-items:center; gap: 12px; }
+  .credits-pill{ font-size: 13px; color: var(--accent); border: 1px solid var(--accent-dim); padding: 6px 12px; border-radius: 20px; }
+  .nav-link{ font-size: 14px; color: var(--ink-dim); text-decoration:none; cursor:pointer; background:none; border:none; font-family:inherit; }
+  .nav-cta{ background: var(--accent); color: #1a1708; padding: 8px 16px; border-radius: 7px; font-size: 14px; font-weight: 600; text-decoration: none; border:none; cursor:pointer; font-family:inherit; }
+
+  .hero{ padding: 72px 0 56px; }
+  .hero .eyebrow{ color: var(--accent); font-size: 14px; margin-bottom: 14px; }
+  .hero h1{ font-size: 44px; font-weight: 600; line-height: 1.12; max-width: 16ch; margin: 0 0 20px; letter-spacing: -0.01em; }
+  .hero p.lead{ color: var(--ink-dim); font-size: 17px; max-width: 48ch; margin: 0 0 28px; }
+  .hero-actions{ display:flex; gap: 14px; flex-wrap: wrap; }
+  .btn-primary{ background: var(--accent); color: #1a1708; border: none; padding: 13px 22px; border-radius: 8px; font-weight: 650; font-size: 15px; text-decoration: none; display: inline-block; cursor: pointer; font-family: inherit; }
+  .btn-ghost{ border: 1px solid var(--line); color: var(--ink); padding: 13px 22px; border-radius: 8px; font-size: 15px; text-decoration: none; display: inline-block; background:none; cursor:pointer; font-family:inherit; }
+
+  .steps{ padding: 40px 0 60px; border-top: 1px solid var(--line); }
+  .steps h2{ font-size: 24px; font-weight: 600; margin: 0 0 30px; }
+  .step-list{ display: grid; grid-template-columns: 1fr; gap: 22px; }
+  @media (min-width: 760px){ .step-list{ grid-template-columns: repeat(3, 1fr); } }
+  .step{ border-left: 2px solid var(--accent-dim); padding-left: 16px; }
+  .step .n{ color: var(--accent); font-size: 13px; margin-bottom: 6px; }
+  .step h3{ font-size: 16px; margin: 0 0 6px; font-weight: 600; }
+  .step p{ color: var(--ink-dim); font-size: 14px; margin: 0; }
+
+  #tool{ padding: 20px 0 70px; border-top: 1px solid var(--line); }
+  #tool > .wrap > h2{ font-size: 24px; font-weight: 600; margin: 34px 0 20px; }
+  .grid{ display:grid; grid-template-columns: 1fr; gap: 18px; }
+  @media (min-width: 800px){ .grid{ grid-template-columns: 340px 1fr; align-items:start; } }
+  .panel{ background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+  .field{ margin-bottom: 16px; }
+  .field label{ display:block; font-size: 13px; color: var(--ink-dim); margin-bottom: 6px; }
+  input[type=email], input[type=password], input[type=text], textarea{
+    width:100%; background: var(--panel-2); border: 1px solid var(--line);
+    color: var(--ink); padding: 10px 12px; border-radius: 8px; font-size: 14px; font-family: inherit;
+  }
+  textarea{ resize: vertical; min-height: 60px; }
+  input:focus, textarea:focus{ outline: none; border-color: var(--accent-dim); }
+
+  .dropzone{ border: 1.5px dashed var(--line); border-radius: 8px; padding: 22px 12px; text-align: center; cursor: pointer; color: var(--ink-dim); font-size: 14px; background: var(--panel-2); transition: border-color .15s; }
+  .dropzone.has-image{ padding: 8px; }
+  .dropzone:hover{ border-color: var(--accent-dim); }
+  .dropzone img{ max-width: 100%; max-height: 180px; border-radius: 6px; display:block; margin: 0 auto; }
+
+  .concepts{ display:grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .concept-btn{ background: var(--panel-2); border: 1px solid var(--line); color: var(--ink); padding: 10px 8px; border-radius: 8px; font-size: 13px; cursor: pointer; text-align: left; font-family: inherit; }
+  .concept-btn.active{ border-color: var(--accent); background: #2a2716; color: var(--accent); }
+
+  button.primary{ width: 100%; background: var(--accent); color: #1a1708; border: none; font-weight: 650; font-size: 15px; padding: 13px; border-radius: 8px; cursor: pointer; margin-top: 4px; font-family: inherit; }
+  button.primary:disabled{ background: var(--accent-dim); color: #a39d87; cursor: not-allowed; }
+  button.primary:hover:not(:disabled){ filter: brightness(1.06); }
+
+  .result-panel{ min-height: 420px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap: 14px; }
+  .result-panel img{ max-width: 100%; border-radius: 8px; border: 1px solid var(--line); }
+  .placeholder{ color: var(--ink-dim); font-size: 14px; text-align:center; padding: 40px 20px; }
+  .spinner{ width: 28px; height: 28px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+  .error-box{ background: #2a1815; border: 1px solid var(--rust); color: #e8b3a8; padding: 12px 14px; border-radius: 8px; font-size: 13.5px; width: 100%; }
+  .success-box{ background: #1e2a18; border: 1px solid #5a7a3f; color: #c7e0b3; padding: 12px 14px; border-radius: 8px; font-size: 13.5px; width: 100%; margin-bottom: 12px; }
+  .download-btn{ background: transparent; border: 1px solid var(--line); color: var(--ink); padding: 9px 16px; border-radius: 8px; font-size: 13.5px; cursor: pointer; }
+  .download-btn:hover{ border-color: var(--accent-dim); }
+
+  .auth-box{ max-width: 380px; margin: 0 auto; }
+  .auth-tabs{ display:flex; gap: 6px; margin-bottom: 20px; }
+  .auth-tab{ flex:1; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink-dim); padding: 10px; border-radius: 8px; cursor:pointer; font-size: 14px; font-family: inherit; }
+  .auth-tab.active{ color: var(--ink); border-color: var(--accent-dim); }
+
+  footer{ border-top: 1px solid var(--line); padding: 26px 0 40px; color: var(--ink-dim); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap">
+    <div class="brand">Продакшн<span>.</span></div>
+    <div class="nav-right" id="navRight">
+      <button class="nav-link" id="navLoginBtn">Войти</button>
+      <button class="nav-cta" id="navRegisterBtn">Регистрация</button>
+    </div>
+  </div>
+</nav>
+
+<section class="hero" id="landing">
+  <div class="wrap">
+    <div class="eyebrow">AI-фотостудия для товаров</div>
+    <h1>Карточка товара без фотографа и студии</h1>
+    <p class="lead">Загрузи обычное фото со смартфона — получи чистый коммерческий визуал для маркетплейса за минуту. 6 бесплатных генераций сразу после регистрации.</p>
+    <div class="hero-actions">
+      <button class="btn-primary" id="heroStartBtn">Начать бесплатно</button>
+      <a href="#steps" class="btn-ghost">Как это работает</a>
+    </div>
+  </div>
+</section>
+
+<section class="steps" id="steps">
+  <div class="wrap">
+    <h2>Три шага до готовой карточки</h2>
+    <div class="step-list">
+      <div class="step"><div class="n">01</div><h3>Фото товара</h3><p>Подойдёт снимок со смартфона на любом фоне.</p></div>
+      <div class="step"><div class="n">02</div><h3>Стиль</h3><p>Студия, интерьер, композиция или карточка с моделью.</p></div>
+      <div class="step"><div class="n">03</div><h3>Результат</h3><p>Готовое изображение — сразу в карточку на Prom, Rozetka или OLX.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="tool">
+  <div class="wrap">
+
+    <!-- Форма авторизации -->
+    <div id="authSection" class="hidden">
+      <h2>Аккаунт</h2>
+      <div class="panel auth-box">
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tabLogin">Вход</button>
+          <button class="auth-tab" id="tabRegister">Регистрация</button>
+        </div>
+        <div id="authError"></div>
+        <div class="field">
+          <label for="authEmail">Email</label>
+          <input type="email" id="authEmail" placeholder="you@example.com">
+        </div>
+        <div class="field">
+          <label for="authPassword">Пароль</label>
+          <input type="password" id="authPassword" placeholder="минимум 6 символов">
+        </div>
+        <button class="primary" id="authSubmitBtn">Войти</button>
+      </div>
+    </div>
+
+    <!-- Рабочий инструмент -->
+    <div id="appSection" class="hidden">
+      <h2>Сгенерировать карточку</h2>
+      <div class="grid">
+        <div class="panel">
+          <div class="field">
+            <label>Фото товара</label>
+            <div class="dropzone" id="dropzone">
+              <div id="dropzoneInner"><span>Нажми, чтобы выбрать фото</span></div>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" style="display:none">
+          </div>
+
+          <div class="field">
+            <label>Стиль карточки</label>
+            <div class="concepts" id="concepts">
+              <button class="concept-btn active" data-value="Чистый студийный фон, мягкий рассеянный свет, товар в фокусе, коммерческая товарная фотография для маркетплейса.">Студия</button>
+              <button class="concept-btn" data-value="Товар в реалистичном жилом интерьере, естественное освещение, атмосфера использования в быту.">Интерьер</button>
+              <button class="concept-btn" data-value="Товар в композиции с сопутствующими предметами (flat lay), вид сверху, эстетичная раскладка.">Композиция</button>
+              <button class="concept-btn" data-value="Товар на модели или в контексте использования, естественная поза, студийный свет.">На модели</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="extraPrompt">Дополнительные пожелания (необязательно)</label>
+            <textarea id="extraPrompt" placeholder="Например: тёплые тона, бежевый фон, добавь тень"></textarea>
+          </div>
+
+          <button class="primary" id="generateBtn">Сгенерировать</button>
+        </div>
+
+        <div class="panel result-panel" id="resultPanel">
+          <div class="placeholder">Результат появится здесь после генерации.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Продакшн — AI-генератор карточек товаров.
+  </div>
+</footer>
+
+<script>
+  // ---------- Состояние ----------
+  let currentUser = null; // { email, credits }
+  let authMode = 'login';
+
+  const landing = document.getElementById('landing');
+  const authSection = document.getElementById('authSection');
+  const appSection = document.getElementById('appSection');
+  const navRight = document.getElementById('navRight');
+
+  function renderNav(){
+    if (currentUser){
+      navRight.innerHTML = `
+        <span class="credits-pill">${currentUser.credits} искр</span>
+        <button class="nav-link" id="logoutBtn">Выйти</button>
+      `;
+      document.getElementById('logoutBtn').addEventListener('click', doLogout);
+    } else {
+      navRight.innerHTML = `
+        <button class="nav-link" id="navLoginBtn">Войти</button>
+        <button class="nav-cta" id="navRegisterBtn">Регистрация</button>
+      `;
+      document.getElementById('navLoginBtn').addEventListener('click', () => showAuth('login'));
+      document.getElementById('navRegisterBtn').addEventListener('click', () => showAuth('register'));
+    }
+  }
+
+  function showAuth(mode){
+    authMode = mode;
+    landing.classList.add('hidden');
+    appSection.classList.add('hidden');
+    authSection.classList.remove('hidden');
+    document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
+    document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
+    document.getElementById('authSubmitBtn').textContent = mode === 'login' ? 'Войти' : 'Создать аккаунт';
+    document.getElementById('authError').innerHTML = '';
+    window.scrollTo({ top: document.getElementById('tool').offsetTop - 60, behavior: 'smooth' });
+  }
+
+  function showApp(){
+    landing.classList.add('hidden');
+    authSection.classList.add('hidden');
+    appSection.classList.remove('hidden');
+  }
+
+  function showLanding(){
+    landing.classList.remove('hidden');
+    authSection.classList.add('hidden');
+    appSection.classList.add('hidden');
+  }
+
+  document.getElementById('heroStartBtn').addEventListener('click', () => showAuth('register'));
+  document.getElementById('tabLogin').addEventListener('click', () => showAuth('login'));
+  document.getElementById('tabRegister').addEventListener('click', () => showAuth('register'));
+
+  document.getElementById('authSubmitBtn').addEventListener('click', async () => {
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    const errBox = document.getElementById('authError');
+    errBox.innerHTML = '';
+
+    const endpoint = authMode === 'login' ? '/api/login' : '/api/register';
+    try {
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await resp.json();
+      if (!resp.ok){
+        errBox.innerHTML = `<div class="error-box">${data.error || 'Ошибка.'}</div>`;
+        return;
+      }
+      currentUser = { email: data.email, credits: data.credits };
+      renderNav();
+      showApp();
+    } catch (err){
+      errBox.innerHTML = `<div class="error-box">Ошибка сети: ${err.message}</div>`;
+    }
+  });
+
+  async function doLogout(){
+    await fetch('/api/logout', { method: 'POST' });
+    currentUser = null;
+    renderNav();
+    showLanding();
+  }
+
+  async function checkSession(){
+    try {
+      const resp = await fetch('/api/me');
+      if (resp.ok){
+        const data = await resp.json();
+        currentUser = { email: data.email, credits: data.credits };
+        renderNav();
+        showApp();
+      }
+    } catch {}
+  }
+  checkSession();
+
+  // ---------- Инструмент генерации ----------
+  const dropzone = document.getElementById('dropzone');
+  const dropzoneInner = document.getElementById('dropzoneInner');
+  const fileInput = document.getElementById('fileInput');
+  const concepts = document.getElementById('concepts');
+  const generateBtn = document.getElementById('generateBtn');
+  const resultPanel = document.getElementById('resultPanel');
+
+  let uploadedBase64 = null;
+  let uploadedMime = null;
+  let selectedConceptPrompt = concepts.querySelector('.concept-btn.active').dataset.value;
+
+  dropzone.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    uploadedMime = file.type;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      uploadedBase64 = ev.target.result.split(',')[1];
+      dropzone.classList.add('has-image');
+      dropzoneInner.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = ev.target.result;
+      dropzoneInner.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+
+  concepts.addEventListener('click', (e) => {
+    const btn = e.target.closest('.concept-btn');
+    if (!btn) return;
+    concepts.querySelectorAll('.concept-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedConceptPrompt = btn.dataset.value;
+  });
+
+  function showLoading(){
+    resultPanel.innerHTML = '<div class="spinner"></div><div class="placeholder">Генерация занимает 10–40 секунд...</div>';
+  }
+  function showError(msg){
+    resultPanel.innerHTML = '<div class="error-box">' + msg + '</div>';
+  }
+  function showResult(dataUrl){
+    resultPanel.innerHTML = '';
+    const img = document.createElement('img');
+    img.src = dataUrl;
+    resultPanel.appendChild(img);
+    const btn = document.createElement('button');
+    btn.className = 'download-btn';
+    btn.textContent = 'Скачать';
+    btn.onclick = () => {
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = 'product-photo.png';
+      a.click();
+    };
+    resultPanel.appendChild(btn);
+  }
+
+  generateBtn.addEventListener('click', async () => {
+    if (!currentUser){ showAuth('login'); return; }
+    if (!uploadedBase64){ showError('Загрузи фото товара.'); return; }
+    if (currentUser.credits <= 0){ showError('Искры закончились.'); return; }
+
+    const extra = document.getElementById('extraPrompt').value.trim();
+    generateBtn.disabled = true;
+    showLoading();
+
+    try {
+      const resp = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageBase64: uploadedBase64,
+          mimeType: uploadedMime,
+          conceptPrompt: selectedConceptPrompt,
+          extraPrompt: extra
+        })
+      });
+      const data = await resp.json();
+
+      if (!resp.ok){
+        showError(data.error || 'Ошибка генерации.');
+        generateBtn.disabled = false;
+        return;
+      }
+
+      currentUser.credits = data.credits;
+      renderNav();
+      showResult(data.image);
+    } catch (err){
+      showError('Не удалось связаться с сервером: ' + err.message);
+    }
+
+    generateBtn.disabled = false;
+  });
+</script>
+</body>
+</html>
