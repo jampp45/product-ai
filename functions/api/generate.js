@@ -1,6 +1,7 @@
 import { getUserFromRequest } from '../_utils.js';
 
-const MODEL = 'gemini-2.5-flash-image-preview';
+// fal.ai — Flux Kontext [pro]: image-to-image редактирование с сохранением исходного объекта.
+const FAL_ENDPOINT = 'https://fal.run/fal-ai/flux-pro/kontext';
 
 export async function onRequestPost({ request, env }) {
   const user = await getUserFromRequest(request, env);
@@ -23,28 +24,25 @@ export async function onRequestPost({ request, env }) {
     return new Response(JSON.stringify({ error: 'Не хватает фото или стиля.' }), { status: 400 });
   }
 
-  const promptText = 'Ты профессиональный товарный фотограф. Сгенерируй фотографию товара с этого изображения в следующем стиле: '
+  const promptText = 'Professional product photography. Re-render this exact product in the following style: '
     + conceptPrompt
-    + (extraPrompt ? (' Дополнительно: ' + extraPrompt) : '')
-    + ' Важно: сохрани точную форму, цвет, текстуру и пропорции товара с исходного фото, не искажай сам товар. Формат — квадратное изображение высокого качества для карточки маркетплейса.';
+    + (extraPrompt ? (' Additional instructions: ' + extraPrompt) : '')
+    + ' Keep the product\'s exact shape, color, texture and proportions unchanged — do not distort or replace the product itself. Output a high-quality square marketplace product image.';
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${env.GEMINI_API_KEY}`;
-
-  const geminiBody = {
-    contents: [{
-      parts: [
-        { text: promptText },
-        { inline_data: { mime_type: mimeType, data: imageBase64 } }
-      ]
-    }]
+  const falBody = {
+    prompt: promptText,
+    image_url: `data:${mimeType};base64,${imageBase64}`
   };
 
   let resp, data;
   try {
-    resp = await fetch(url, {
+    resp = await fetch(FAL_ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(geminiBody)
+      headers: {
+        'Authorization': `Key ${env.FAL_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(falBody)
     });
     data = await resp.json();
   } catch (err) {
@@ -52,26 +50,20 @@ export async function onRequestPost({ request, env }) {
   }
 
   if (!resp.ok) {
-    const msg = (data && data.error && data.error.message) ? data.error.message : 'Неизвестная ошибка модели.';
-    return new Response(JSON.stringify({ error: 'Ошибка от Google: ' + msg }), { status: 502 });
+    const msg = (data && data.detail) ? JSON.stringify(data.detail) : (data && data.error) ? data.error : 'Неизвестная ошибка модели.';
+    return new Response(JSON.stringify({ error: 'Ошибка от fal.ai: ' + msg }), { status: 502 });
   }
 
-  const parts = data?.candidates?.[0]?.content?.parts || [];
-  const imagePart = parts.find(p => p.inlineData || p.inline_data);
-
-  if (!imagePart) {
-    const textPart = parts.find(p => p.text);
-    return new Response(JSON.stringify({ error: 'Модель не вернула изображение.' + (textPart ? (' Ответ: ' + textPart.text) : '') }), { status: 502 });
+  const imageUrl = data?.images?.[0]?.url;
+  if (!imageUrl) {
+    return new Response(JSON.stringify({ error: 'Модель не вернула изображение.' }), { status: 502 });
   }
 
   // Списываем искру только после успешной генерации
   await env.DB.prepare('UPDATE users SET credits = credits - 1 WHERE id = ? AND credits > 0').bind(user.id).run();
 
-  const inline = imagePart.inlineData || imagePart.inline_data;
-  const mime = inline.mimeType || inline.mime_type || 'image/png';
-
   return new Response(JSON.stringify({
-    image: `data:${mime};base64,${inline.data}`,
+    image: imageUrl,
     credits: user.credits - 1
   }), {
     status: 200,
