@@ -22,7 +22,8 @@
   .wrap{ max-width: 1040px; margin: 0 auto; padding: 0 20px; }
   .hidden{ display: none !important; }
 
-  nav.top{ border-bottom: 1px solid var(--line); position: sticky; top:0; background: rgba(20,19,15,0.92); backdrop-filter: blur(6px); z-index: 10; }
+  nav.top{ border-bottom: 1px solid var(--line); position: sticky; top:0; background: rgba(20,19,15,0.92); backdrop-filter: blur(6px); z-index: 10; transition: box-shadow .2s; }
+  nav.top.scrolled{ box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
   nav.top .wrap{ display:flex; align-items:center; justify-content:space-between; padding: 14px 20px; }
   .brand{ font-family:"Newsreader",serif; font-size: 20px; font-weight: 600; }
   .brand span{ color: var(--accent); }
@@ -31,13 +32,39 @@
   .nav-link{ font-size: 14px; color: var(--ink-dim); text-decoration:none; cursor:pointer; background:none; border:none; font-family:inherit; }
   .nav-cta{ background: var(--accent); color: #1a1708; padding: 8px 16px; border-radius: 7px; font-size: 14px; font-weight: 600; text-decoration: none; border:none; cursor:pointer; font-family:inherit; }
 
-  .hero{ padding: 72px 0 56px; }
-  .hero .eyebrow{ color: var(--accent); font-size: 14px; margin-bottom: 14px; }
-  .hero h1{ font-size: 44px; font-weight: 600; line-height: 1.12; max-width: 16ch; margin: 0 0 20px; letter-spacing: -0.01em; }
-  .hero p.lead{ color: var(--ink-dim); font-size: 17px; max-width: 48ch; margin: 0 0 28px; }
+  .hero{ padding: 64px 0 72px; position: relative; overflow: hidden; }
+  .hero::before{
+    content:''; position:absolute; top:-180px; right:-160px; width:560px; height:560px;
+    background: radial-gradient(circle, rgba(212,167,44,0.16) 0%, rgba(212,167,44,0) 70%);
+    pointer-events:none;
+  }
+  .hero .wrap{ position:relative; display:grid; grid-template-columns: 1fr; gap: 40px; align-items:center; }
+  @media (min-width: 860px){ .hero .wrap{ grid-template-columns: 1.05fr 0.95fr; } }
+  .hero-copy{ opacity:0; transform: translateY(14px); animation: heroIn .7s ease-out forwards; }
+  @media (prefers-reduced-motion: reduce){ .hero-copy{ animation: none; opacity:1; transform:none; } }
+  @keyframes heroIn{ to{ opacity:1; transform: translateY(0); } }
+  .hero h1{ font-size: 42px; font-weight: 600; line-height: 1.14; max-width: 15ch; margin: 0 0 18px; letter-spacing: -0.01em; }
+  .hero p.lead{ color: var(--ink-dim); font-size: 16.5px; max-width: 46ch; margin: 0 0 26px; }
   .hero-actions{ display:flex; gap: 14px; flex-wrap: wrap; }
-  .btn-primary{ background: var(--accent); color: #1a1708; border: none; padding: 13px 22px; border-radius: 8px; font-weight: 650; font-size: 15px; text-decoration: none; display: inline-block; cursor: pointer; font-family: inherit; }
-  .btn-ghost{ border: 1px solid var(--line); color: var(--ink); padding: 13px 22px; border-radius: 8px; font-size: 15px; text-decoration: none; display: inline-block; background:none; cursor:pointer; font-family:inherit; }
+  .btn-primary{ background: var(--accent); color: #1a1708; border: none; padding: 13px 22px; border-radius: 8px; font-weight: 650; font-size: 15px; text-decoration: none; display: inline-block; cursor: pointer; font-family: inherit; transition: filter .15s, transform .15s; }
+  .btn-primary:hover{ filter: brightness(1.07); transform: translateY(-1px); }
+  .btn-ghost{ border: 1px solid var(--line); color: var(--ink); padding: 13px 22px; border-radius: 8px; font-size: 15px; text-decoration: none; display: inline-block; background:none; cursor:pointer; font-family:inherit; transition: border-color .15s; }
+  .btn-ghost:hover{ border-color: var(--accent-dim); }
+
+  /* Слайдер "до / после" */
+  .compare{ opacity:0; animation: heroIn .7s ease-out .15s forwards; }
+  @media (prefers-reduced-motion: reduce){ .compare{ animation:none; opacity:1; } }
+  .compare-media{ position:relative; aspect-ratio: 1 / 1; border-radius: 14px; overflow:hidden; border: 1px solid var(--line); background: var(--panel); }
+  .compare-media svg{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .compare-after{ position:absolute; inset:0; clip-path: inset(0 50% 0 0); will-change: clip-path; }
+  .compare-handle{ position:absolute; top:0; bottom:0; left:50%; width:2px; background: var(--accent); transform: translateX(-1px); pointer-events:none; box-shadow: 0 0 12px rgba(212,167,44,0.5); }
+  .compare-handle::after{
+    content:'⇔'; position:absolute; top:50%; left:50%; transform: translate(-50%,-50%);
+    width:34px; height:34px; border-radius:50%; background: var(--accent); color:#1a1708;
+    display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700;
+  }
+  .compare-range{ position:absolute; inset:0; width:100%; height:100%; margin:0; opacity:0; cursor: ew-resize; -webkit-appearance:none; appearance:none; }
+  .compare-labels{ display:flex; justify-content:space-between; font-size: 12.5px; color: var(--ink-dim); margin-top: 10px; }
 
   .steps{ padding: 40px 0 60px; border-top: 1px solid var(--line); }
   .steps h2{ font-size: 24px; font-weight: 600; margin: 0 0 30px; }
@@ -76,7 +103,8 @@
   button.primary:hover:not(:disabled){ filter: brightness(1.06); }
 
   .result-panel{ min-height: 420px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap: 14px; }
-  .result-panel img{ max-width: 100%; border-radius: 8px; border: 1px solid var(--line); }
+  .result-panel img{ max-width: 100%; border-radius: 8px; border: 1px solid var(--line); opacity:0; animation: resultIn .5s ease-out forwards; }
+  @keyframes resultIn{ to{ opacity:1; } }
   .placeholder{ color: var(--ink-dim); font-size: 14px; text-align:center; padding: 40px 20px; }
   .spinner{ width: 28px; height: 28px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin{ to{ transform: rotate(360deg); } }
@@ -107,12 +135,68 @@
 
 <section class="hero" id="landing">
   <div class="wrap">
-    <div class="eyebrow">AI-фотостудия для товаров</div>
-    <h1>Карточка товара без фотографа и студии</h1>
-    <p class="lead">Загрузи обычное фото со смартфона — получи чистый коммерческий визуал для маркетплейса за минуту. 6 бесплатных генераций сразу после регистрации.</p>
-    <div class="hero-actions">
-      <button class="btn-primary" id="heroStartBtn">Начать бесплатно</button>
-      <a href="#steps" class="btn-ghost">Как это работает</a>
+    <div class="hero-copy">
+      <h1>Карточка товара без фотографа и студии</h1>
+      <p class="lead">Загрузи обычное фото со смартфона — получи чистый коммерческий визуал для маркетплейса за минуту. 6 бесплатных генераций сразу после регистрации.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" id="heroStartBtn">Начать бесплатно</button>
+        <a href="#steps" class="btn-ghost">Как это работает</a>
+      </div>
+    </div>
+
+    <div class="compare">
+      <div class="compare-media">
+        <div class="compare-before">
+          <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="fabric" width="14" height="14" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+                <rect width="14" height="14" fill="#3a382f"></rect>
+                <line x1="0" y1="0" x2="0" y2="14" stroke="#302e26" stroke-width="6"></line>
+              </pattern>
+              <filter id="hardShadow" x="-50%" y="-50%" width="200%" height="200%">
+                <feDropShadow dx="6" dy="10" stdDeviation="3" flood-color="#000" flood-opacity="0.5"></feDropShadow>
+              </filter>
+            </defs>
+            <rect width="400" height="400" fill="url(#fabric)"></rect>
+            <ellipse cx="200" cy="330" rx="90" ry="14" fill="#000" opacity="0.35"></ellipse>
+            <g filter="url(#hardShadow)">
+              <rect x="150" y="150" width="100" height="160" rx="14" fill="#716e5f"></rect>
+              <rect x="178" y="118" width="44" height="36" rx="6" fill="#716e5f"></rect>
+              <rect x="186" y="98" width="28" height="26" rx="4" fill="#5c5949"></rect>
+            </g>
+            <ellipse cx="178" cy="190" rx="16" ry="30" fill="#ffffff" opacity="0.22"></ellipse>
+          </svg>
+        </div>
+        <div class="compare-after" id="compareAfter">
+          <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="studioBg" cx="50%" cy="35%" r="75%">
+                <stop offset="0%" stop-color="#2c2515"></stop>
+                <stop offset="100%" stop-color="#14130f"></stop>
+              </radialGradient>
+              <linearGradient id="bottleGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#f0cf6a"></stop>
+                <stop offset="100%" stop-color="#b8891f"></stop>
+              </linearGradient>
+              <filter id="softShadow" x="-50%" y="-50%" width="200%" height="200%">
+                <feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#000" flood-opacity="0.45"></feDropShadow>
+              </filter>
+            </defs>
+            <rect width="400" height="400" fill="url(#studioBg)"></rect>
+            <ellipse cx="200" cy="332" rx="100" ry="16" fill="#000" opacity="0.3"></ellipse>
+            <g filter="url(#softShadow)">
+              <rect x="150" y="150" width="100" height="160" rx="14" fill="url(#bottleGrad)"></rect>
+              <rect x="178" y="118" width="44" height="36" rx="6" fill="url(#bottleGrad)"></rect>
+              <rect x="186" y="98" width="28" height="26" rx="4" fill="#8a6415"></rect>
+            </g>
+            <rect x="150" y="150" width="100" height="160" rx="14" fill="none" stroke="#f7e3a3" stroke-opacity="0.5" stroke-width="1.5"></rect>
+            <ellipse cx="172" cy="180" rx="14" ry="34" fill="#ffffff" opacity="0.35"></ellipse>
+          </svg>
+        </div>
+        <div class="compare-handle" id="compareHandle"></div>
+        <input type="range" class="compare-range" id="compareRange" min="0" max="100" value="50" aria-label="Сравнение до и после">
+      </div>
+      <div class="compare-labels"><span>Фото со смартфона</span><span>Результат ИИ</span></div>
     </div>
   </div>
 </section>
@@ -299,6 +383,24 @@
   }
   checkSession();
 
+  // ---------- Слайдер "до / после" ----------
+  const compareAfter = document.getElementById('compareAfter');
+  const compareHandle = document.getElementById('compareHandle');
+  const compareRange = document.getElementById('compareRange');
+  if (compareRange){
+    compareRange.addEventListener('input', () => {
+      const val = compareRange.value;
+      compareAfter.style.clipPath = `inset(0 ${100 - val}% 0 0)`;
+      compareHandle.style.left = val + '%';
+    });
+  }
+
+  // ---------- Тень навбара при скролле ----------
+  const topNav = document.querySelector('nav.top');
+  window.addEventListener('scroll', () => {
+    topNav.classList.toggle('scrolled', window.scrollY > 8);
+  });
+
   // ---------- Инструмент генерации ----------
   const dropzone = document.getElementById('dropzone');
   const dropzoneInner = document.getElementById('dropzoneInner');
@@ -343,19 +445,28 @@
   function showError(msg){
     resultPanel.innerHTML = '<div class="error-box">' + msg + '</div>';
   }
-  function showResult(dataUrl){
+  function showResult(imageUrl){
     resultPanel.innerHTML = '';
     const img = document.createElement('img');
-    img.src = dataUrl;
+    img.crossOrigin = 'anonymous';
+    img.src = imageUrl;
     resultPanel.appendChild(img);
     const btn = document.createElement('button');
     btn.className = 'download-btn';
     btn.textContent = 'Скачать';
-    btn.onclick = () => {
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = 'product-photo.png';
-      a.click();
+    btn.onclick = async () => {
+      try {
+        const resp = await fetch(imageUrl);
+        const blob = await resp.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = 'product-photo.png';
+        a.click();
+        URL.revokeObjectURL(blobUrl);
+      } catch {
+        window.open(imageUrl, '_blank');
+      }
     };
     resultPanel.appendChild(btn);
   }
